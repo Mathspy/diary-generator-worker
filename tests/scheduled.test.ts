@@ -75,3 +75,44 @@ Deno.test("successful schedule trigger", async () => {
 
   destroy();
 });
+
+Deno.test("failed schedule trigger", async () => {
+  const { responses, errors, destroy } = setupMock({
+    succeed: false,
+    msg: "something went horribly wrong",
+  });
+
+  const env = {
+    ACCOUNT_ID: "abc",
+    PROJECT_NAME: "game-dev-diary",
+    EMAIL: "email@example.com",
+    AUTH_KEY: "iliketrains",
+  };
+
+  await withWaitUntil((waitUntil) =>
+    worker.scheduled?.(
+      { scheduledTime: Date.now(), cron: "0 0 * * *", noRetry() {} },
+      env,
+      {
+        waitUntil,
+        passThroughOnException() {},
+      },
+    )
+  );
+
+  assertEquals(responses.length, 1);
+  assertEquals(responses[0].match["account_id"], env.ACCOUNT_ID);
+  assertEquals(responses[0].match["project_name"], env.PROJECT_NAME);
+  assert(
+    responses[0].req.url.startsWith("https://api.cloudflare.com/"),
+    "Request was not made to CloudFlare API",
+  );
+  assertEquals(responses[0].req.headers.get("x-auth-email"), env.EMAIL);
+  assertEquals(responses[0].req.headers.get("x-auth-key"), env.AUTH_KEY);
+
+  assertEquals(errors[0], [
+    `Failed to start new deployment.\nCaused by: something went horribly wrong`,
+  ]);
+
+  destroy();
+});
