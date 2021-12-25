@@ -22,3 +22,7 @@ globs = ["**/*.js"]
 [triggers]
 # Run every day at 00:00
 crons = ["0 0 * * *"]
+
+[vars]
+ACCOUNT_ID = "ecd90052f556d3cb79c293ce5ab5f3c4"
+PROJECT_NAME = "game-dev-diary"
