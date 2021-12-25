@@ -5,6 +5,7 @@ type Env = {
   PROJECT_NAME: string;
   EMAIL: string;
   AUTH_KEY: string;
+  WEBHOOK_SECRET: string;
 };
 
 export default {

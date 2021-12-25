@@ -30,3 +30,4 @@ PROJECT_NAME = "game-dev-diary"
 # [secrets]
 # EMAIL
 # AUTH_KEY
+# WEBHOOK_SECRET
