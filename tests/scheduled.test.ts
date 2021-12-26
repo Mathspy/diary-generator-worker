@@ -7,7 +7,7 @@ import worker from "../src/worker.ts";
 
 function setupMock({ succeed, msg = "" }: { succeed: boolean; msg?: string }) {
   const requests: Request[] = [];
-  const errors: unknown[] = [];
+  const logs: Request[] = [];
   fetch.install();
   fetch.mock(
     "POST@/client/v4/accounts/:account_id/pages/projects/:project_name/deployments",
@@ -19,15 +19,22 @@ function setupMock({ succeed, msg = "" }: { succeed: boolean; msg?: string }) {
       });
     },
   );
-  window.console.error = (...error: unknown[]) => {
-    errors.push([...error]);
-  };
+  fetch.mock(
+    "POST@/api/webhooks/:webhook_id/:webhook_token",
+    (req, _match) => {
+      logs.push(req);
 
-  return { requests, errors, destroy: fetch.uninstall };
+      return new Response(msg, {
+        status: 200,
+      });
+    },
+  );
+
+  return { requests, logs, destroy: fetch.uninstall };
 }
 
 Deno.test("successful schedule trigger", async () => {
-  const { requests, destroy } = setupMock({ succeed: true });
+  const { requests, logs, destroy } = setupMock({ succeed: true });
 
   const env = {
     ACCOUNT_ID: "abc",
@@ -55,11 +62,21 @@ Deno.test("successful schedule trigger", async () => {
   assertEquals(requests[0].headers.get("x-auth-email"), env.EMAIL);
   assertEquals(requests[0].headers.get("x-auth-key"), env.AUTH_KEY);
 
+  assertEquals(logs.length, 1);
+  assertEquals(
+    logs[0].url,
+    `https://discord.com/api/webhooks/${env.DISCORD_WEBHOOK_ID}/${env.DISCORD_WEBHOOK_TOKEN}`,
+  );
+  assertEquals(await logs[0].json(), {
+    content:
+      '```json\n{\n  "msg": "Successfully redeployed",\n  "cause": "cronjob"\n}```',
+  });
+
   destroy();
 });
 
 Deno.test("failed schedule trigger", async () => {
-  const { requests, errors, destroy } = setupMock({
+  const { requests, logs, destroy } = setupMock({
     succeed: false,
     msg: "something went horribly wrong",
   });
@@ -93,9 +110,15 @@ Deno.test("failed schedule trigger", async () => {
   assertEquals(requests[0].headers.get("x-auth-email"), env.EMAIL);
   assertEquals(requests[0].headers.get("x-auth-key"), env.AUTH_KEY);
 
-  assertEquals(errors[0], [
-    `Failed to start new deployment.\nCaused by: something went horribly wrong`,
-  ]);
+  assertEquals(logs.length, 1);
+  assertEquals(
+    logs[0].url,
+    `https://discord.com/api/webhooks/${env.DISCORD_WEBHOOK_ID}/${env.DISCORD_WEBHOOK_TOKEN}`,
+  );
+  assertEquals(await logs[0].json(), {
+    content:
+      '```json\n{\n  "msg": "Failed to start new deployment",\n  "cause": "something went horribly wrong"\n}```',
+  });
 
   destroy();
 });
