@@ -4,6 +4,7 @@ import {
 } from "https://deno.land/std@0.119.0/testing/asserts.ts";
 
 import * as fetch from "https://deno.land/x/mock_fetch@0.3.0/mod.ts";
+import { withWaitUntil } from "./utils.ts";
 
 import worker from "../src/worker.ts";
 
@@ -26,23 +27,6 @@ function setupMock({ succeed, msg = "" }: { succeed: boolean; msg?: string }) {
   };
 
   return { responses, errors, destroy: fetch.uninstall };
-}
-
-// Pass a waitUntil function which collects a punch of promises
-//
-// withWaitUntil's returned promise will only resolve once all
-// passed promises resolve
-async function withWaitUntil(
-  fn: (w: (p: Promise<unknown>) => void) => void | Promise<void>,
-) {
-  const promises: Promise<unknown>[] = [];
-  const waitUntil = (promise: Promise<unknown>) => {
-    promises.push(promise);
-  };
-
-  await fn(waitUntil);
-
-  return Promise.all(promises);
 }
 
 Deno.test("successful schedule trigger", async () => {
