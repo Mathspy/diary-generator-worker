@@ -1,37 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.119.0/testing/asserts.ts";
 
-import * as fetch from "https://deno.land/x/mock_fetch@0.3.0/mod.ts";
-import { withWaitUntil } from "./utils.ts";
+import { setupMock, withWaitUntil } from "./utils.ts";
 
 import worker from "../src/worker.ts";
-
-function setupMock({ succeed, msg = "" }: { succeed: boolean; msg?: string }) {
-  const requests: Request[] = [];
-  const logs: Request[] = [];
-  fetch.install();
-  fetch.mock(
-    "POST@/client/v4/accounts/:account_id/pages/projects/:project_name/deployments",
-    (req, _match) => {
-      requests.push(req);
-
-      return new Response(msg, {
-        status: succeed ? 200 : 400,
-      });
-    },
-  );
-  fetch.mock(
-    "POST@/api/webhooks/:webhook_id/:webhook_token",
-    (req, _match) => {
-      logs.push(req);
-
-      return new Response(msg, {
-        status: 200,
-      });
-    },
-  );
-
-  return { requests, logs, destroy: fetch.uninstall };
-}
 
 Deno.test("successful schedule trigger", async () => {
   const { requests, logs, destroy } = setupMock({ succeed: true });
