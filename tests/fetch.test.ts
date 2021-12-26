@@ -136,7 +136,7 @@ Deno.test("github webhook > invalid digest", async () => {
   destroy();
 });
 
-Deno.test("github webhook > valid digest", async () => {
+Deno.test("github webhook > incorrect event type", async () => {
   const { requests, logs, destroy } = setupMock({ succeed: false });
 
   const body = JSON.stringify({ action: "published" });
@@ -178,7 +178,11 @@ Deno.test("github webhook > valid digest", async () => {
 
   assertEquals(requests.length, 0);
 
-  assertEquals(logs.length, 0);
+  assertEquals(logs.length, 1);
+  assertLog(logs[0], {
+    msg: "Received unexpected GitHub event",
+    event: null,
+  });
 
   destroy();
 });

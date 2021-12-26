@@ -68,6 +68,16 @@ export default {
         unreachable(signature);
     }
 
+    const event = req.headers.get("X-GitHub-Event");
+    if (event !== "release") {
+      log({
+        msg: "Received unexpected GitHub event",
+        event,
+      });
+
+      return new Response("OK");
+    }
+
     return new Response("OK");
   },
   scheduled(_event, env, ctx) {
