@@ -1,3 +1,4 @@
+import { assertEquals } from "https://deno.land/std@0.119.0/testing/asserts.ts";
 import * as fetch from "https://deno.land/x/mock_fetch@0.3.0/mod.ts";
 
 type waitUntilFn = (promise: Promise<unknown>) => void;
@@ -47,4 +48,31 @@ export function setupMock(
   );
 
   return { requests, logs, destroy: fetch.uninstall };
+}
+
+interface LoggingEnv {
+  DISCORD_WEBHOOK_ID: string;
+  DISCORD_WEBHOOK_TOKEN: string;
+}
+
+export function makeAssertLog(env: LoggingEnv) {
+  return async (log: Request, data: unknown) => {
+    assertEquals(
+      log.url,
+      `https://discord.com/api/webhooks/${env.DISCORD_WEBHOOK_ID}/${env.DISCORD_WEBHOOK_TOKEN}`,
+    );
+
+    const { content }: { content: string } = await log.json();
+    assertEquals(
+      content.slice(0, 8),
+      "```json\n",
+    );
+    assertEquals(
+      content.slice(-3),
+      "```",
+    );
+    const parsed = JSON.parse(content.slice(8, -3));
+
+    assertEquals(parsed, data);
+  };
 }
