@@ -78,10 +78,18 @@ export default {
       return new Response("OK");
     }
 
+    const { action } = JSON.parse(new TextDecoder().decode(body));
+
+    // published is the action we care about so if it is `published`
+    // we will redeploy
+    if (action === "published") {
+      ctx.waitUntil(deploy(env, log, "GitHub webhook for a release event"));
+    }
+
     return new Response("OK");
   },
   scheduled(_event, env, ctx) {
-    ctx.waitUntil(deploy(env, logger(env, ctx.waitUntil)));
+    ctx.waitUntil(deploy(env, logger(env, ctx.waitUntil), "cronjob"));
   },
 } as ExportedHandler<Env>;
 
@@ -139,7 +147,7 @@ async function verifySignature(
   return valid ? { status: "valid", body } : { status: "invalid_digest" };
 }
 
-async function deploy(env: Env, log: Logger) {
+async function deploy(env: Env, log: Logger, cause: string) {
   const response = await fetch(
     `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/pages/projects/${env.PROJECT_NAME}/deployments`,
     {
@@ -158,7 +166,7 @@ async function deploy(env: Env, log: Logger) {
       cause: await response.text(),
     });
   } else {
-    log({ msg: "Successfully redeployed", cause: "cronjob" });
+    log({ msg: "Successfully redeployed", cause });
   }
 }
 
