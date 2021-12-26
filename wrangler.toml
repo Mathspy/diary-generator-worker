@@ -2,8 +2,7 @@ name = "game-dev-diary"
 type = "javascript"
 
 account_id = "ecd90052f556d3cb79c293ce5ab5f3c4"
-workers_dev = true
-route = "api.gamediary.dev/*"
+route = "https://api.gamediary.dev/*"
 zone_id = "ac5586061a44553ab1e9757945b4adcb"
 compatibility_date = "2021-12-24"
 
