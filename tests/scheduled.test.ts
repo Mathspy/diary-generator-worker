@@ -1,21 +1,22 @@
 import { assertEquals } from "https://deno.land/std@0.119.0/testing/asserts.ts";
 
-import { setupMock, withWaitUntil } from "./utils.ts";
+import { makeAssertLog, setupMock, withWaitUntil } from "./utils.ts";
 
 import worker from "../src/worker.ts";
 
+const env = {
+  ACCOUNT_ID: "abc",
+  PROJECT_NAME: "game-dev-diary",
+  EMAIL: "email@example.com",
+  AUTH_KEY: "iliketrains",
+  WEBHOOK_SECRET: "verysecret",
+  DISCORD_WEBHOOK_ID: "12345",
+  DISCORD_WEBHOOK_TOKEN: "moresecret",
+};
+const assertLog = makeAssertLog(env);
+
 Deno.test("successful schedule trigger", async () => {
   const { requests, logs, destroy } = setupMock({ succeed: true });
-
-  const env = {
-    ACCOUNT_ID: "abc",
-    PROJECT_NAME: "game-dev-diary",
-    EMAIL: "email@example.com",
-    AUTH_KEY: "iliketrains",
-    WEBHOOK_SECRET: "verysecret",
-    DISCORD_WEBHOOK_ID: "12345",
-    DISCORD_WEBHOOK_TOKEN: "moresecret",
-  };
 
   await withWaitUntil((waitUntil) =>
     worker.scheduled?.(
@@ -34,13 +35,9 @@ Deno.test("successful schedule trigger", async () => {
   assertEquals(requests[0].headers.get("x-auth-key"), env.AUTH_KEY);
 
   assertEquals(logs.length, 1);
-  assertEquals(
-    logs[0].url,
-    `https://discord.com/api/webhooks/${env.DISCORD_WEBHOOK_ID}/${env.DISCORD_WEBHOOK_TOKEN}`,
-  );
-  assertEquals(await logs[0].json(), {
-    content:
-      '```json\n{\n  "msg": "Successfully redeployed",\n  "cause": "cronjob"\n}```',
+  assertLog(logs[0], {
+    msg: "Successfully redeployed",
+    cause: "cronjob",
   });
 
   destroy();
@@ -51,16 +48,6 @@ Deno.test("failed schedule trigger", async () => {
     succeed: false,
     msg: "something went horribly wrong",
   });
-
-  const env = {
-    ACCOUNT_ID: "abc",
-    PROJECT_NAME: "game-dev-diary",
-    EMAIL: "email@example.com",
-    AUTH_KEY: "iliketrains",
-    WEBHOOK_SECRET: "verysecret",
-    DISCORD_WEBHOOK_ID: "12345",
-    DISCORD_WEBHOOK_TOKEN: "moresecret",
-  };
 
   await withWaitUntil((waitUntil) =>
     worker.scheduled?.(
@@ -82,13 +69,9 @@ Deno.test("failed schedule trigger", async () => {
   assertEquals(requests[0].headers.get("x-auth-key"), env.AUTH_KEY);
 
   assertEquals(logs.length, 1);
-  assertEquals(
-    logs[0].url,
-    `https://discord.com/api/webhooks/${env.DISCORD_WEBHOOK_ID}/${env.DISCORD_WEBHOOK_TOKEN}`,
-  );
-  assertEquals(await logs[0].json(), {
-    content:
-      '```json\n{\n  "msg": "Failed to start new deployment",\n  "cause": "something went horribly wrong"\n}```',
+  assertLog(logs[0], {
+    msg: "Failed to start new deployment",
+    cause: "something went horribly wrong",
   });
 
   destroy();
