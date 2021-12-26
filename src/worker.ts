@@ -6,6 +6,8 @@ type Env = {
   EMAIL: string;
   AUTH_KEY: string;
   WEBHOOK_SECRET: string;
+  DISCORD_WEBHOOK_ID: string;
+  DISCORD_WEBHOOK_TOKEN: string;
 };
 
 export default {

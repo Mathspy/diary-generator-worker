@@ -38,6 +38,8 @@ Deno.test("successful schedule trigger", async () => {
     EMAIL: "email@example.com",
     AUTH_KEY: "iliketrains",
     WEBHOOK_SECRET: "verysecret",
+    DISCORD_WEBHOOK_ID: "12345",
+    DISCORD_WEBHOOK_TOKEN: "moresecret",
   };
 
   await withWaitUntil((waitUntil) =>
@@ -73,6 +75,8 @@ Deno.test("failed schedule trigger", async () => {
     EMAIL: "email@example.com",
     AUTH_KEY: "iliketrains",
     WEBHOOK_SECRET: "verysecret",
+    DISCORD_WEBHOOK_ID: "12345",
+    DISCORD_WEBHOOK_TOKEN: "moresecret",
   };
 
   await withWaitUntil((waitUntil) =>

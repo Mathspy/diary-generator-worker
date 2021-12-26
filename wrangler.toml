@@ -26,8 +26,10 @@ crons = ["0 0 * * *"]
 [vars]
 ACCOUNT_ID = "ecd90052f556d3cb79c293ce5ab5f3c4"
 PROJECT_NAME = "game-dev-diary"
+DISCORD_WEBHOOK_ID = "924620329161216051"
 
 # [secrets]
 # EMAIL
 # AUTH_KEY
 # WEBHOOK_SECRET
+# DISCORD_WEBHOOK_TOKEN
