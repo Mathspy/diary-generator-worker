@@ -9,6 +9,24 @@ type Env = {
 };
 
 export default {
+  fetch(req, _env, _ctx) {
+    const url = new URL(req.url);
+    if (url.pathname !== "/github") {
+      return new Response("Not Found", {
+        status: 404,
+      });
+    }
+    if (req.method !== "POST") {
+      return new Response("Method Not Allowed", {
+        status: 405,
+        headers: {
+          Allow: "POST",
+        },
+      });
+    }
+
+    return new Response("OK");
+  },
   scheduled(_event, env, ctx) {
     ctx.waitUntil(deploy(env));
   },
