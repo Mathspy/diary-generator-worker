@@ -12,7 +12,7 @@ type Env = {
 
 export default {
   async fetch(req, env, ctx) {
-    const log = logger(env, ctx.waitUntil);
+    const log = logger(env, ctx.waitUntil.bind(ctx));
 
     const url = new URL(req.url);
     if (url.pathname !== "/github") {
@@ -89,7 +89,7 @@ export default {
     return new Response("OK");
   },
   scheduled(_event, env, ctx) {
-    ctx.waitUntil(deploy(env, logger(env, ctx.waitUntil), "cronjob"));
+    ctx.waitUntil(deploy(env, logger(env, ctx.waitUntil.bind(ctx)), "cronjob"));
   },
 } as ExportedHandler<Env>;
 
