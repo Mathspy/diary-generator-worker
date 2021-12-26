@@ -11,7 +11,9 @@ type Env = {
 };
 
 export default {
-  fetch(req, _env, _ctx) {
+  async fetch(req, env, ctx) {
+    const log = logger(env, ctx.waitUntil);
+
     const url = new URL(req.url);
     if (url.pathname !== "/github") {
       return new Response("Not Found", {
@@ -27,12 +29,105 @@ export default {
       });
     }
 
+    const body = await req.arrayBuffer();
+
+    const signature = await verifySignature(
+      body,
+      req.headers.get("X-Hub-Signature-256"),
+      env.WEBHOOK_SECRET,
+    );
+
+    switch (signature.status) {
+      case "valid":
+        break;
+      case "missing":
+        log({
+          msg: "Received request with a missing signature",
+          headers: Object.fromEntries(req.headers.entries()),
+        });
+        return new Response("MISSING_SIGNATURE", {
+          status: 400,
+        });
+      case "invalid_algorithm":
+        log({
+          msg: "Received request with an unexpected hash algorithm",
+          headers: Object.fromEntries(req.headers.entries()),
+        });
+        return new Response("INVALID_SIGNATURE_HASH", {
+          status: 400,
+        });
+      case "invalid_digest":
+        log({
+          msg: "Received request with an invalid digest",
+          headers: Object.fromEntries(req.headers.entries()),
+        });
+        return new Response("INVALID_DIGEST", {
+          status: 401,
+        });
+      default:
+        unreachable(signature);
+    }
+
     return new Response("OK");
   },
   scheduled(_event, env, ctx) {
     ctx.waitUntil(deploy(env, logger(env, ctx.waitUntil)));
   },
 } as ExportedHandler<Env>;
+
+function decodeHex(hex: string) {
+  const match = hex.match(/.{1,2}/g);
+  if (match) {
+    return new Uint8Array(match.map((byte) => parseInt(byte, 16)));
+  }
+
+  return null;
+}
+
+function unreachable(_: never) {}
+
+type ValidSignature = {
+  status: "valid";
+  body: ArrayBuffer;
+};
+type InvalidSignature = {
+  status: "missing" | "invalid_algorithm" | "invalid_digest";
+};
+type Signature = ValidSignature | InvalidSignature;
+async function verifySignature(
+  body: ArrayBuffer,
+  signature: string | null,
+  secret: string,
+): Promise<Signature> {
+  if (!signature) {
+    return {
+      status: "missing",
+    };
+  }
+
+  const [hash, rawDigest] = signature.split("=");
+  if (hash !== "sha256") {
+    return { status: "invalid_algorithm" };
+  }
+
+  const digest = decodeHex(rawDigest);
+  if (!digest) {
+    return { status: "invalid_digest" };
+  }
+
+  const enc = new TextEncoder();
+  const algorithm = { name: "HMAC", hash: "SHA-256" };
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    algorithm,
+    false,
+    ["verify"],
+  );
+  const valid = await crypto.subtle.verify(algorithm, key, digest, body);
+
+  return valid ? { status: "valid", body } : { status: "invalid_digest" };
+}
 
 async function deploy(env: Env, log: Logger) {
   const response = await fetch(
