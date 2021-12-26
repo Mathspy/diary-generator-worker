@@ -1,0 +1,7 @@
+{
+  "https://crux.land/api/get/2KNRVU.ts": "6a77d55844aba78d01520c5ff0b2f0af7f24cc1716a0de8b3bb6bd918c47b5ba",
+  "https://deno.land/std@0.119.0/fmt/colors.ts": "8368ddf2d48dfe413ffd04cdbb7ae6a1009cf0dccc9c7ff1d76259d9c61a0621",
+  "https://deno.land/std@0.119.0/testing/_diff.ts": "e6a10d2aca8d6c27a9c5b8a2dbbf64353874730af539707b5b39d4128140642d",
+  "https://deno.land/std@0.119.0/testing/asserts.ts": "e8bd3ff280731e2d2b48c67d6ed97ce2c0b717601ccb38816aff89edce71680d",
+  "https://deno.land/x/mock_fetch@0.3.0/mod.ts": "7e7806c65ab17b2b684c334c4e565812bdaf504a3e9c938d2bb52bb67428bc89"
+}
